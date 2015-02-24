@@ -8,9 +8,14 @@
 #endif
 
 // control register bits
-#define DS3234_A1IE     0x1
-#define DS3234_A2IE     0x2
-#define DS3234_INTCN    0x4
+#define DS3234_A1IE     0x01
+#define DS3234_A2IE     0x02
+#define DS3234_INTCN    0x04
+#define DS3234_RS1      0x08
+#define DS3234_RS2      0x10
+#define DS3234_CONV     0x20
+#define DS3234_BBSQ     0x40
+#define DS3234_EOSC     0x80
 
 // status register bits
 #define DS3234_A1F      0x1
