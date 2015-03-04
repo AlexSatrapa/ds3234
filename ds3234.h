@@ -7,6 +7,9 @@
 #include <WProgram.h>
 #endif
 
+#include <Time.h>
+#include <RTC.h>
+
 // control register bits
 #define DS3234_A1IE     0x01
 #define DS3234_A2IE     0x02
@@ -75,5 +78,55 @@ uint8_t DS3234_get_sram_8b(const uint8_t pin, const uint8_t address);
 uint8_t dectobcd(const uint8_t val);
 uint8_t bcdtodec(const uint8_t val);
 uint8_t inp2toi(const char *cmd, const uint16_t seek);
+
+/**
+ * DS3232RTC Class
+ */
+class DS3234RTC
+{
+  public:
+    DS3234RTC( uint8_t pin );
+    DS3234RTC( uint8_t pin, const uint8_t ctrl_reg );
+    static bool available();
+    // Date and Time
+    time_t get();
+    static void set(time_t t);
+    void read(tmElements_t &tm);
+    static void write(tmElements_t &tm);
+    static void writeTime(tmElements_t &tm);
+    static void writeDate(tmElements_t &tm);
+    // Alarms
+    static void readAlarm(uint8_t alarm, alarmMode_t &mode, tmElements_t &tm);
+    static void writeAlarm(uint8_t alarm, alarmMode_t mode, tmElements_t tm);
+    // Control Register
+    static void setBBOscillator(bool enable);
+    static void setBBSqareWave(bool enable);
+    static void setSQIMode(sqiMode_t mode);
+    static bool isAlarmInterupt(uint8_t alarm);
+    static uint8_t readControlRegister();
+    static uint8_t readStatusRegister();
+    // Control/Status Register
+    static bool isOscillatorStopFlag();
+    static void setOscillatorStopFlag(bool enable);
+    static void setBB33kHzOutput(bool enable);
+    static void setTCXORate(tempScanRate_t rate);
+    static void set33kHzOutput(bool enable);
+    static bool isTCXOBusy();
+    static bool isAlarmFlag(uint8_t alarm);
+    static uint8_t isAlarmFlag();
+    static void clearAlarmFlag(uint8_t alarm);
+    // Temperature
+    static void readTemperature(tpElements_t &tmp);
+  private:
+    static uint8_t dec2bcd(uint8_t num);
+    static uint8_t bcd2dec(uint8_t num);
+    uint8_t SS_PIN;
+  protected:
+    static void _wTime(tmElements_t &tm);
+    static void _wDate(tmElements_t &tm);
+    static uint8_t read1(uint8_t addr);
+    static void write1(uint8_t addr, uint8_t data);
+};
+
 
 #endif

@@ -34,18 +34,7 @@
 
 #include <SPI.h>
 #include <stdio.h>
-#include "ds3234.h"
-
-/* control register 0Eh/8Eh
-bit7 EOSC   Enable Oscillator (1 if oscillator must be stopped when on battery)
-bit6 BBSQW  Battery Backed Square Wave
-bit5 CONV   Convert temperature (1 forces a conversion NOW)
-bit4 RS2    Rate select - frequency of square wave output
-bit3 RS1    Rate select
-bit2 INTCN  Interrupt control (1 for use of the alarms and to disable square wave)
-bit1 A2IE   Alarm2 interrupt enable (1 to enable)
-bit0 A1IE   Alarm1 interrupt enable (1 to enable)
-*/
+#include <ds3234.h>
 
 void DS3234_init(const uint8_t pin, const uint8_t ctrl_reg)
 {
@@ -135,15 +124,23 @@ uint8_t DS3234_get_addr(const uint8_t pin, const uint8_t addr)
     return rv;
 }
 
-// control register
+/* control register 0Eh/8Eh
+bit7 EOSC   Enable Oscillator (1 if oscillator must be stopped when on battery)
+bit6 BBSQW  Battery Backed Square Wave
+bit5 CONV   Convert temperature (1 forces a conversion NOW)
+bit4 RS2    Rate select - frequency of square wave output
+bit3 RS1    Rate select
+bit2 INTCN  Interrupt control (1 for use of the alarms and to disable square wave)
+bit1 A2IE   Alarm2 interrupt enable (1 to enable)
+bit0 A1IE   Alarm1 interrupt enable (1 to enable)
+*/
+
 void DS3234_set_creg(const uint8_t pin, const uint8_t val)
 {
     DS3234_set_addr(pin, 0x8E, val);
 }
 
-// status register 0Fh/8Fh
-
-/*
+/* status register 0Fh/8Fh
 bit7 OSF      Oscillator Stop Flag (if 1 then oscillator has stopped and date might be innacurate)
 bit6 BB32kHz  Battery Backed 32kHz output (1 if square wave is needed when powered by battery)
 bit5 CRATE1   Conversion rate 1  temperature compensation rate
@@ -365,4 +362,43 @@ uint8_t inp2toi(const char *cmd, const uint16_t seek)
     uint8_t rv;
     rv = (cmd[seek] - 48) * 10 + cmd[seek + 1] - 48;
     return rv;
+}
+
+// class
+
+DS3234RTC::DS3234RTC( uint8_t pin )
+{
+	SS_PIN = pin;
+	DS3234_init(pin, DS3234_INTCN);
+}
+
+DS3234RTC::DS3234RTC( uint8_t pin, const uint8_t ctrl_reg )
+{
+	SS_PIN = pin;
+	DS3234_init(pin, ctrl_reg);
+}
+
+bool DS3234RTC::available() {
+	return 1;
+}
+
+time_t DS3234RTC::get()
+{
+	tmElements_t tm;
+	read(tm);
+	return makeTime(tm);
+}
+
+void DS3234RTC::read( tmElements_t &tm )
+{
+	ts t;
+	uint8_t pin = SS_PIN;
+	DS3234_get(pin, &t);
+	tm.Second = t.sec;
+	tm.Minute = t.min;
+	tm.Hour = t.hour;
+	tm.Wday = t.wday;
+	tm.Day = t.mday;
+	tm.Month = t.mon;
+	tm.Year = t.year_s;
 }
