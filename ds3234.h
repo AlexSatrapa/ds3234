@@ -21,8 +21,13 @@
 #define DS3234_EOSC     0x80
 
 // status register bits
-#define DS3234_A1F      0x1
-#define DS3234_A2F      0x2
+#define DS3234_A1F      0x01
+#define DS3234_A2F      0x02
+#define DS3234_BSY      0x04
+#define DS3234_EN33KHZ  0x08
+#define DS3234_CRATE0   0x10
+#define DS3234_CRATE1   0x20
+#define DS3234_BB33KHZ  0x40
 #define DS3234_OSF      0x80
 
 struct ts {

@@ -370,14 +370,14 @@ DS3234RTC::DS3234RTC( uint8_t pin )
 {
 	ss_pin = pin;
 	pinMode(ss_pin, OUTPUT);
-	spi_settings = SPISettings(1000000, MSBFIRST, SPI_MODE1);
+	spi_settings = SPISettings(4000000, MSBFIRST, SPI_MODE1);
 }
 
 DS3234RTC::DS3234RTC( uint8_t pin, const uint8_t ctrl_reg )
 {
 	ss_pin = pin;
 	pinMode(ss_pin, OUTPUT);
-	spi_settings = SPISettings(1000000, MSBFIRST, SPI_MODE1);
+	spi_settings = SPISettings(4000000, MSBFIRST, SPI_MODE1);
 }
 
 bool DS3234RTC::available() {
@@ -621,4 +621,82 @@ void DS3234RTC::clearAlarmFlag(uint8_t alarm)
 	value = read1(0x0F);
 	value &= alarm_mask;
 	write1(0x0F, value);
+}
+
+uint8_t DS3234RTC::readControlRegister()
+{
+	return read1(0x0E);
+}
+
+/*
+ * Status Register
+ *
+ *   OSF  BB33KHZ  CRATE1  CRATE0  EN33KHZ  BSY  A2F  A1F
+ */
+uint8_t DS3234RTC::readStatusRegister()
+{
+	return read1(0x0F);
+}
+
+void DS3234RTC::writeStatusRegister(uint8_t value)
+{
+	write1(0x0F, value);
+}
+
+uint8_t DS3234RTC::isOscillatorStopFlag()
+{
+	return ((readStatusRegister() & DS3234_OSF) != 0);
+}
+
+void DS3234RTC::setOscillatorStopFlag(bool enable)
+{
+	uint8_t value = readStatusRegister();
+	if (enable)
+	{
+		value |= DS3234_OSF;
+	} else {
+		value &= ~DS3234_OSF;
+	}
+	writeStatusRegister(value);
+}
+
+void DS3234RTC::setBB33kHzOutput(bool enable)
+{
+	uint8_t value = readStatusRegister();
+	if (enable)
+	{
+		value |= DS3234_BB33KHZ;
+	} else {
+		value &= ~DS3234_BB33KHz;
+	}
+}
+
+void DS3234RTC::setTCXORate(tempScanRate_t rate)
+{
+	uint8_t value = readStatusRegister() & 0xCF; // clear the rate bits
+	switch (rate)
+	{
+		case tempScanRate64sec: value |= DS3232_CRATE_64; break;
+		case tempScanRate128sec: value |= DS3232_CRATE_128; break;
+		case tempScanRate256sec: value |= DS3232_CRATE_256; break;
+		case tempScanRate512sec: value |= DS3232_CRATE_512; break;
+	}
+	writeStatusRegister(value);
+}
+
+void DS3234RTC::set33kHzOutput(bool enable)
+{
+	uint8_t value = readStatusRegister;
+	if (enable)
+	{
+		value |= DS3232_EN33KHZ;
+	} else {
+		value &= ~DS3232_EN33KHZ;
+	}
+	writeStatusRegister(value);
+}
+
+bool DS3232RTC::isTCXOBusy()
+{
+	return((readStatusRegister() & DS3232_BSY) != 0);
 }
