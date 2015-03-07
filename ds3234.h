@@ -102,21 +102,22 @@ class DS3234RTC
     void writeDate(tmElements_t &tm);
     // Alarms
     void readAlarm(uint8_t alarm, alarmMode_t &mode, tmElements_t &tm);
-    static void writeAlarm(uint8_t alarm, alarmMode_t mode, tmElements_t tm);
+    void writeAlarm(uint8_t alarm, alarmMode_t mode, tmElements_t tm);
     // Control Register
     static void setBBOscillator(bool enable);
     static void setBBSqareWave(bool enable);
     static void setSQIMode(sqiMode_t mode);
     bool isAlarmInterrupt(uint8_t alarm);
-    static uint8_t readControlRegister();
-    static uint8_t readStatusRegister();
+    uint8_t readControlRegister();
+    uint8_t readStatusRegister();
+    void writeStatusRegister(uint8_t);
     // Control/Status Register
-    static bool isOscillatorStopFlag();
-    static void setOscillatorStopFlag(bool enable);
-    static void setBB33kHzOutput(bool enable);
-    static void setTCXORate(tempScanRate_t rate);
-    static void set33kHzOutput(bool enable);
-    static bool isTCXOBusy();
+    bool isOscillatorStopFlag();
+    void setOscillatorStopFlag(bool enable);
+    void setBB33kHzOutput(bool enable);
+    void setTCXORate(tempScanRate_t rate);
+    void set33kHzOutput(bool enable);
+    bool isTCXOBusy();
     bool isAlarmFlag(uint8_t alarm);
     uint8_t isAlarmFlag();
     void clearAlarmFlag(uint8_t alarm);
@@ -128,8 +129,6 @@ class DS3234RTC
     uint8_t bcd2dec(uint8_t num);
     uint8_t ss_pin;
   protected:
-    static void _wTime(tmElements_t &tm);
-    static void _wDate(tmElements_t &tm);
     uint8_t read1(uint8_t addr);
     void write1(uint8_t addr, uint8_t data);
 };

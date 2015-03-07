@@ -588,6 +588,72 @@ void DS3234RTC::readAlarm(uint8_t alarm, alarmMode_t &mode, tmElements_t &tm)
 	}
 }
 
+void DS3234RTC::writeAlarm(uint8_t alarm, alarmMode_t mode, tmElements_t tm) {
+	uint8_t data[4];
+
+	switch (mode) {
+		case alarmModePerSecond:
+			data[0] = 0x80;
+			data[1] = 0x80;
+			data[2] = 0x80;
+			data[3] = 0x80;
+			break;
+		case alarmModePerMinute:
+			data[0] = 0x00;
+			data[1] = 0x80;
+			data[2] = 0x80;
+			data[3] = 0x80;
+			break;
+		case alarmModeSecondsMatch:
+			data[0] = 0x00 | dectobcd(tm.Second);
+			data[1] = 0x80;
+			data[2] = 0x80;
+			data[3] = 0x80;
+			break;
+		case alarmModeMinutesMatch:
+			data[0] = 0x00 | dectobcd(tm.Second);
+			data[1] = 0x00 | dectobcd(tm.Minute);
+			data[2] = 0x80;
+			data[3] = 0x80;
+			break;
+		case alarmModeHoursMatch:
+			data[0] = 0x00 | dectobcd(tm.Second);
+			data[1] = 0x00 | dectobcd(tm.Minute);
+			data[2] = 0x00 | dectobcd(tm.Hour);
+			data[3] = 0x80;
+			break;
+		case alarmModeDateMatch:
+			data[0] = 0x00 | dectobcd(tm.Second);
+			data[1] = 0x00 | dectobcd(tm.Minute);
+			data[2] = 0x00 | dectobcd(tm.Hour);
+			data[3] = 0x00 | dectobcd(tm.Day);
+			break;
+		case alarmModeDayMatch:
+			data[0] = 0x00 | dectobcd(tm.Second);
+			data[1] = 0x00 | dectobcd(tm.Minute);
+			data[2] = 0x00 | dectobcd(tm.Hour);
+			data[3] = 0x40 | dectobcd(tm.Wday);
+			break;
+		case alarmModeOff:
+			data[0] = 0x00;
+			data[1] = 0x00;
+			data[2] = 0x00;
+			data[3] = 0x00;
+			break;
+		default: return;
+	}
+
+	SPI.beginTransaction(spi_settings);
+	digitalWrite(ss_pin, LOW);
+	SPI.transfer( ((alarm == 1) ? 0x07 : 0x0B) );
+	if (alarm == 1) SPI.transfer(data[0]);
+	SPI.transfer(data[1]);
+	SPI.transfer(data[2]);
+	SPI.transfer(data[3]);
+	digitalWrite(ss_pin, HIGH);
+	SPI.endTransaction();
+}
+
 bool DS3234RTC::isAlarmInterrupt(uint8_t alarm)
 {
 	if ((alarm > 2) || (alarm < 1)) return false;
@@ -643,7 +709,7 @@ void DS3234RTC::writeStatusRegister(uint8_t value)
 	write1(0x0F, value);
 }
 
-uint8_t DS3234RTC::isOscillatorStopFlag()
+bool DS3234RTC::isOscillatorStopFlag()
 {
 	return ((readStatusRegister() & DS3234_OSF) != 0);
 }
@@ -667,7 +733,7 @@ void DS3234RTC::setBB33kHzOutput(bool enable)
 	{
 		value |= DS3234_BB33KHZ;
 	} else {
-		value &= ~DS3234_BB33KHz;
+		value &= ~DS3234_BB33KHZ;
 	}
 }
 
@@ -686,7 +752,7 @@ void DS3234RTC::setTCXORate(tempScanRate_t rate)
 
 void DS3234RTC::set33kHzOutput(bool enable)
 {
-	uint8_t value = readStatusRegister;
+	uint8_t value = readStatusRegister();
 	if (enable)
 	{
 		value |= DS3232_EN33KHZ;
@@ -696,7 +762,7 @@ void DS3234RTC::set33kHzOutput(bool enable)
 	writeStatusRegister(value);
 }
 
-bool DS3232RTC::isTCXOBusy()
+bool DS3234RTC::isTCXOBusy()
 {
 	return((readStatusRegister() & DS3232_BSY) != 0);
 }
