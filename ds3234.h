@@ -117,15 +117,16 @@ class DS3234RTC
     static void clearAlarmFlag(uint8_t alarm);
     // Temperature
     static void readTemperature(tpElements_t &tmp);
+    SPISettings spi_settings;
   private:
     static uint8_t dec2bcd(uint8_t num);
     static uint8_t bcd2dec(uint8_t num);
-    uint8_t SS_PIN;
+    uint8_t ss_pin;
   protected:
     static void _wTime(tmElements_t &tm);
     static void _wDate(tmElements_t &tm);
-    static uint8_t read1(uint8_t addr);
-    static void write1(uint8_t addr, uint8_t data);
+    uint8_t read1(uint8_t addr);
+    void write1(uint8_t addr, uint8_t data);
 };
 
 

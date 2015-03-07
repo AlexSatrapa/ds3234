@@ -368,14 +368,16 @@ uint8_t inp2toi(const char *cmd, const uint16_t seek)
 
 DS3234RTC::DS3234RTC( uint8_t pin )
 {
-	SS_PIN = pin;
-	DS3234_init(pin, DS3234_INTCN);
+	ss_pin = pin;
+	pinMode(ss_pin, OUTPUT);
+	spi_settings = SPISettings(1000000, MSBFIRST, SPI_MODE1);
 }
 
 DS3234RTC::DS3234RTC( uint8_t pin, const uint8_t ctrl_reg )
 {
-	SS_PIN = pin;
-	DS3234_init(pin, ctrl_reg);
+	ss_pin = pin;
+	pinMode(ss_pin, OUTPUT);
+	spi_settings = SPISettings(1000000, MSBFIRST, SPI_MODE1);
 }
 
 bool DS3234RTC::available() {
@@ -391,14 +393,36 @@ time_t DS3234RTC::get()
 
 void DS3234RTC::read( tmElements_t &tm )
 {
-	ts t;
-	uint8_t pin = SS_PIN;
-	DS3234_get(pin, &t);
-	tm.Second = t.sec;
-	tm.Minute = t.min;
-	tm.Hour = t.hour;
-	tm.Wday = t.wday;
-	tm.Day = t.mday;
-	tm.Month = t.mon;
-	tm.Year = t.year_s;
+	uint8_t TimeDate[7];      //second,minute,hour,dow,day,month,year
+	uint8_t century = 0;
+	uint8_t i;
+
+	SPI.beginTransaction(spi_settings);
+	delay(1);
+	digitalWrite(ss_pin, LOW);
+	SPI.transfer(0x00);       // Request transfer of date/time registers
+	for (i = 0; i <= 6; i++)
+	{
+	  TimeDate[i] = SPI.transfer(0x00);
+	}
+	digitalWrite(ss_pin, HIGH);
+	SPI.endTransaction();
+
+	tm.Second = bcdtodec(TimeDate[0] & 0x7F);
+	tm.Minute = bcdtodec(TimeDate[1] & 0x7F);
+	if ((TimeDate[2] & 0x40) != 0)
+	{
+		// Convert 12-hour format to 24-hour format
+		tm.Hour = bcdtodec(TimeDate[2] & 0x1F);
+		if((TimeDate[2] & 0x20) != 0) tm.Hour += 12;
+	} else {
+		tm.Hour = bcdtodec(TimeDate[2] & 0x3F);
+	}
+	tm.Wday = bcdtodec(TimeDate[3] & 0x07);
+	tm.Day = bcdtodec(TimeDate[4] & 0x3F);
+	tm.Month = bcdtodec(TimeDate[5] & 0x1F);
+	tm.Year = bcdtodec(TimeDate[6]);
+	century = (TimeDate[5] & 0x80);
+	if (century != 0) tm.Year += 100;
+	tm.Year = y2kYearToTm(tm.Year);
 }
