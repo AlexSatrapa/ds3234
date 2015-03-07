@@ -426,3 +426,37 @@ void DS3234RTC::read( tmElements_t &tm )
 	if (century != 0) tm.Year += 100;
 	tm.Year = y2kYearToTm(tm.Year);
 }
+
+void DS3234RTC::writeDate( tmElements_t &tm )
+{
+	uint8_t i, y;
+	uint8_t TimeDate[7];
+
+	if( tm.Wday == 0 || tm.Wday > 7)
+	{
+		tmElements_t tm2;
+		breakTime( makeTime(tm), tm2 );  // Calculate Wday by converting to Unix time and back
+		tm.Wday = tm2.Wday;
+	}
+	TimeDate[3] = tm.Wday;
+	TimeDate[4] = dectobcd(tm.Day);
+	TimeDate[5] = dectobcd(tm.Month);
+	y = tmYearToY2k(tm.Year);
+	if (y > 99)
+	{
+		TimeDate[5] |= 0x80; // century flag
+		y -= 100;
+	}
+	TimeDate[6] = dectobcd(y);
+
+	// Write date to RTC
+	SPI.beginTransaction(spi_settings);
+	digitalWrite(ss_pin, LOW);
+	SPI.transfer(0x83);           // Request write into date registers
+	for (i = 3; i <= 6; i++)      // For sanity, index is register we're writing
+	{
+		SPI.transfer(TimeDate[i]);
+	}
+	digitalWrite(ss_pin, HIGH);
+	SPI.endTransaction();
+}

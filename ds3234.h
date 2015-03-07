@@ -92,9 +92,9 @@ class DS3234RTC
     time_t get();
     static void set(time_t t);
     void read(tmElements_t &tm);
-    static void write(tmElements_t &tm);
-    static void writeTime(tmElements_t &tm);
-    static void writeDate(tmElements_t &tm);
+    void write(tmElements_t &tm);
+    void writeTime(tmElements_t &tm);
+    void writeDate(tmElements_t &tm);
     // Alarms
     static void readAlarm(uint8_t alarm, alarmMode_t &mode, tmElements_t &tm);
     static void writeAlarm(uint8_t alarm, alarmMode_t mode, tmElements_t tm);
@@ -119,8 +119,8 @@ class DS3234RTC
     static void readTemperature(tpElements_t &tmp);
     SPISettings spi_settings;
   private:
-    static uint8_t dec2bcd(uint8_t num);
-    static uint8_t bcd2dec(uint8_t num);
+    uint8_t dec2bcd(uint8_t num);
+    uint8_t bcd2dec(uint8_t num);
     uint8_t ss_pin;
   protected:
     static void _wTime(tmElements_t &tm);
