@@ -391,6 +391,29 @@ time_t DS3234RTC::get()
 	return makeTime(tm);
 }
 
+uint8_t DS3234RTC::read1(uint8_t addr)
+{
+	uint8_t data;
+
+	SPI.beginTransaction(spi_settings);
+	digitalWrite(ss_pin, LOW);
+	SPI.transfer(addr);
+	data = SPI.transfer(0x00);
+	digitalWrite(ss_pin, HIGH);
+	SPI.endTransaction();
+	return data;
+}
+
+void DS3234RTC::write1(uint8_t addr, uint8_t value)
+{
+	SPI.beginTransaction(spi_settings);
+	digitalWrite(ss_pin, LOW);
+	SPI.transfer(addr + 0x80);
+	SPI.transfer(value);
+	digitalWrite(ss_pin, HIGH);
+	SPI.endTransaction();
+}
+
 void DS3234RTC::read( tmElements_t &tm )
 {
 	uint8_t TimeDate[7];      //second,minute,hour,dow,day,month,year
@@ -495,4 +518,107 @@ void DS3234RTC::readTemperature(tpElements_t &tmp)
 
 	tmp.Temp = msb;
 	tmp.Decimal = (lsb >> 6) * 25;
+}
+
+void DS3234RTC::readAlarm(uint8_t alarm, alarmMode_t &mode, tmElements_t &tm)
+{
+	uint8_t data[4];
+	uint8_t flags;
+
+	memset(&tm, 0, sizeof(tmElements_t));
+	mode = alarmModeUnknown;
+	if ((alarm < 1) || (alarm > 2)) return;
+
+	SPI.beginTransaction(spi_settings);
+	digitalWrite(ss_pin, LOW);
+	SPI.transfer( (alarm==1) ? 0x07 : 0x08);
+	data[0] = 0;
+	if (alarm == 1) data[0] = SPI.transfer(0x00);
+	data[1] = SPI.transfer(0x00);
+	data[2] = SPI.transfer(0x00);
+	data[3] = SPI.transfer(0x00);
+	digitalWrite(ss_pin, HIGH);
+	SPI.endTransaction();
+
+	flags =
+		((data[0] & 0x80) >> 7) |
+		((data[1] & 0x80) >> 6) |
+		((data[2] & 0x80) >> 5) |
+		((data[3] & 0x80) >> 4);
+	if (flags == 0) flags = ((data[3] & 0x40) >> 2);
+	switch (flags) {
+		case 0x04: mode = alarmModePerSecond; break;  // X1111
+		case 0x0E: mode = (alarm == 1) ? alarmModeSecondsMatch : alarmModePerMinute; break;  // X1110
+		case 0x0A: mode = alarmModeMinutesMatch; break;  // X1100
+		case 0x08: mode = alarmModeHoursMatch; break;  // X1000
+		case 0x00: mode = alarmModeDateMatch; break;  // 00000
+		case 0x10: mode = alarmModeDayMatch; break;  // 10000
+	}
+
+	if (alarm == 1) tm.Second = bcdtodec(data[0] & 0x7F);
+	tm.Minute = bcdtodec(data[1] & 0x7F);
+	if ((data[2] & 0x40) != 0) {
+		// 12 hour format with bit 5 set as PM
+		tm.Hour = bcdtodec(data[2] & 0x1F);
+		if ((data[2] & 0x20) != 0) tm.Hour += 12;
+	} else {
+		// 24 hour format
+		tm.Hour = bcdtodec(data[2] & 0x3F);
+	}
+	if ((data[3] & 0x40) == 0) {
+		// Alarm holds Date (of Month)
+		tm.Day = bcdtodec(data[3] & 0x3F);
+	} else {
+		// Alarm holds Day (of Week)
+		tm.Wday = bcdtodec(data[3] & 0x07);
+	}
+
+	// TODO : Not too sure about this.
+	/*
+	If the alarm is set to trigger every Nth of the month
+	(or every 1-7 week day), but the date/day are 0 then
+	what?  The spec is not clear about alarm off conditions.
+	My assumption is that it would not trigger is date/day
+	set to 0, so I've created a Alarm-Off mode.
+	*/
+	if ((mode == alarmModeDateMatch) && (tm.Day == 0)) {
+		mode = alarmModeOff;
+	} else if ((mode == alarmModeDayMatch) && (tm.Wday == 0)) {
+		mode = alarmModeOff;
+	}
+}
+
+bool DS3234RTC::isAlarmInterrupt(uint8_t alarm)
+{
+	if ((alarm > 2) || (alarm < 1)) return false;
+	uint8_t value = read1(0x0E) & 0x07;  // sends 0Eh - Control register
+	if (alarm == 1) {
+		return ((value & 0x05) == 0x05);
+	} else {
+		return ((value & 0x06) == 0x06);
+	}
+}
+
+uint8_t DS3234RTC::isAlarmFlag()
+{
+	uint8_t value = read1(0x0F); // Status register
+	return (value & (DS3234_A1F | DS3234_A2F));
+}
+
+bool DS3234RTC::isAlarmFlag(uint8_t alarm)
+{
+	uint8_t value = isAlarmFlag();
+	return ((value & alarm) != 0);
+}
+
+void DS3234RTC::clearAlarmFlag(uint8_t alarm)
+{
+	uint8_t alarm_mask, value;
+
+	if ((alarm != 1) and (alarm != 2)) return;
+	alarm_mask = ~alarm;
+
+	value = read1(0x0F);
+	value &= alarm_mask;
+	write1(0x0F, value);
 }

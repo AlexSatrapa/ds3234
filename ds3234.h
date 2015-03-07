@@ -96,13 +96,13 @@ class DS3234RTC
     void writeTime(tmElements_t &tm);
     void writeDate(tmElements_t &tm);
     // Alarms
-    static void readAlarm(uint8_t alarm, alarmMode_t &mode, tmElements_t &tm);
+    void readAlarm(uint8_t alarm, alarmMode_t &mode, tmElements_t &tm);
     static void writeAlarm(uint8_t alarm, alarmMode_t mode, tmElements_t tm);
     // Control Register
     static void setBBOscillator(bool enable);
     static void setBBSqareWave(bool enable);
     static void setSQIMode(sqiMode_t mode);
-    static bool isAlarmInterupt(uint8_t alarm);
+    bool isAlarmInterrupt(uint8_t alarm);
     static uint8_t readControlRegister();
     static uint8_t readStatusRegister();
     // Control/Status Register
@@ -112,9 +112,9 @@ class DS3234RTC
     static void setTCXORate(tempScanRate_t rate);
     static void set33kHzOutput(bool enable);
     static bool isTCXOBusy();
-    static bool isAlarmFlag(uint8_t alarm);
-    static uint8_t isAlarmFlag();
-    static void clearAlarmFlag(uint8_t alarm);
+    bool isAlarmFlag(uint8_t alarm);
+    uint8_t isAlarmFlag();
+    void clearAlarmFlag(uint8_t alarm);
     // Temperature
     void readTemperature(tpElements_t &tmp);
     SPISettings spi_settings;
