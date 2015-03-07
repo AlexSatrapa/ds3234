@@ -460,3 +460,23 @@ void DS3234RTC::writeDate( tmElements_t &tm )
 	digitalWrite(ss_pin, HIGH);
 	SPI.endTransaction();
 }
+
+void DS3234RTC::writeTime( tmElements_t &tm )
+{
+	uint8_t i;
+	uint8_t TimeDate[7];
+
+	TimeDate[0] = dectobcd(tm.Second);
+	TimeDate[1] = dectobcd(tm.Minute);
+	TimeDate[2] = dectobcd(tm.Hour);
+
+	SPI.beginTransaction(spi_settings);
+	digitalWrite(ss_pin, LOW);
+	SPI.transfer(0x80);           // Request write into time registers
+	for (i = 0; i < 3; i++)
+	{
+		SPI.transfer(TimeDate[i]);
+	}
+	digitalWrite(ss_pin, HIGH);
+	SPI.endTransaction();
+}
