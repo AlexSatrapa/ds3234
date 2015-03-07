@@ -480,3 +480,19 @@ void DS3234RTC::writeTime( tmElements_t &tm )
 	digitalWrite(ss_pin, HIGH);
 	SPI.endTransaction();
 }
+
+void DS3234RTC::readTemperature(tpElements_t &tmp)
+{
+	uint8_t msb, lsb;
+
+	SPI.beginTransaction(spi_settings);
+	digitalWrite(ss_pin, LOW);
+	SPI.transfer(0x11);
+	msb = SPI.transfer(0x00);
+	lsb = SPI.transfer(0x00);
+	digitalWrite(ss_pin, HIGH);
+	SPI.endTransaction();
+
+	tmp.Temp = msb;
+	tmp.Decimal = (lsb >> 6) * 25;
+}
