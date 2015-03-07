@@ -30,23 +30,9 @@
 #define DS3234_BB33KHZ  0x40
 #define DS3234_OSF      0x80
 
-struct ts {
-    uint8_t sec;         /* seconds */
-    uint8_t min;         /* minutes */
-    uint8_t hour;        /* hours */
-    uint8_t mday;        /* day of the month */
-    uint8_t mon;         /* month */
-    int year;            /* year */
-    uint8_t wday;        /* day of the week */
-    uint8_t yday;        /* day in the year */
-    uint8_t isdst;       /* daylight saving time */
-    uint8_t year_s;      /* year in short notation*/
-};
-
 // helpers
 uint8_t dectobcd(const uint8_t val);
 uint8_t bcdtodec(const uint8_t val);
-uint8_t inp2toi(const char *cmd, const uint16_t seek);
 
 /**
  * DS3232RTC Class

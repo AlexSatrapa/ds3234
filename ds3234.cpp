@@ -47,13 +47,6 @@ uint8_t bcdtodec(const uint8_t val)
     return ((val / 16 * 10) + (val % 16));
 }
 
-uint8_t inp2toi(const char *cmd, const uint16_t seek)
-{
-    uint8_t rv;
-    rv = (cmd[seek] - 48) * 10 + cmd[seek + 1] - 48;
-    return rv;
-}
-
 // class
 
 DS3234RTC::DS3234RTC( uint8_t pin )
