@@ -347,7 +347,7 @@ void DS3234RTC::writeAlarm(uint8_t alarm, alarmMode_t mode, tmElements_t tm) {
 bool DS3234RTC::isAlarmInterrupt(uint8_t alarm)
 {
 	if ((alarm > 2) || (alarm < 1)) return false;
-	uint8_t value = read1(0x0E) & 0x07;  // sends 0Eh - Control register
+	uint8_t value = readControlRegister() & 0x07;  // sends 0Eh - Control register
 	if (alarm == 1) {
 		return ((value & 0x05) == 0x05);
 	} else {
@@ -357,7 +357,7 @@ bool DS3234RTC::isAlarmInterrupt(uint8_t alarm)
 
 uint8_t DS3234RTC::isAlarmFlag()
 {
-	uint8_t value = read1(0x0F); // Status register
+	uint8_t value = readStatusRegister(); // Status register
 	return (value & (DS3234_A1F | DS3234_A2F));
 }
 
@@ -374,14 +374,66 @@ void DS3234RTC::clearAlarmFlag(uint8_t alarm)
 	if ((alarm != 1) and (alarm != 2)) return;
 	alarm_mask = ~alarm;
 
-	value = read1(0x0F);
+	value = readStatusRegister();
 	value &= alarm_mask;
-	write1(0x0F, value);
+	writeStatusRegister(value);
 }
+
+/*
+ * Control Register
+ *
+ *   ~EOSC  BBSQW  CONV  RS2  RS1  INTCN  A2IE  A1IE
+ */
 
 uint8_t DS3234RTC::readControlRegister()
 {
 	return read1(0x0E);
+}
+
+void DS3234RTC::writeControlRegister(uint8_t value)
+{
+	write1(0x0E, value);
+}
+
+void DS3234RTC::setBBOscillator(bool enable)
+{
+	uint8_t value = readControlRegister();
+	if (enable)
+	{
+		value |= DS3232_EOSC;
+	} else {
+		value &= ~DS3232_EOSC;
+	}
+	writeControlRegister(value);
+}
+
+void DS3234RTC::setBBSqareWave(bool enable)
+{
+	uint8_t value = readControlRegister();
+	if (enable)
+	{
+		value |= DS3232_BBSQW;
+	} else {
+		value &= ~DS3232_BBSQW;
+	}
+	writeControlRegister(value);
+}
+
+void DS3234RTC::setSQIMode(sqiMode_t mode)
+{
+	uint8_t value = readControlRegister();
+	switch (mode)
+	{
+		case sqiModeNone: value |= DS3232_INTCN; break;
+		case sqiMode1Hz: value |= DS3232_RS_1HZ;  break;
+		case sqiMode1024Hz: value |= DS3232_RS_1024HZ; break;
+		case sqiMode4096Hz: value |= DS3232_RS_4096HZ; break;
+		case sqiMode8192Hz: value |= DS3232_RS_8192HZ; break;
+		case sqiModeAlarm1: value |= (DS3232_INTCN | DS3232_A1IE); break;
+		case sqiModeAlarm2: value |= (DS3232_INTCN | DS3232_A2IE); break;
+		case sqiModeAlarmBoth: value |= (DS3232_INTCN | DS3232_A1IE | DS3232_A2IE); break;
+	}
+	writeControlRegister(value);
 }
 
 /*
