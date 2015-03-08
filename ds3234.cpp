@@ -72,7 +72,7 @@ void DS3234RTC::read( tmElements_t &tm )
 	SPI.beginTransaction(spi_settings);
 	delay(1);
 	digitalWrite(ss_pin, LOW);
-	SPI.transfer(0x00);       // Request transfer of date/time registers
+	SPI.transfer(DS323X_TIME_REGS);
 	for (i = 0; i <= 6; i++)
 	{
 	  TimeDate[i] = SPI.transfer(0x00);
@@ -124,7 +124,7 @@ void DS3234RTC::writeDate( tmElements_t &tm )
 	// Write date to RTC
 	SPI.beginTransaction(spi_settings);
 	digitalWrite(ss_pin, LOW);
-	SPI.transfer(0x83);           // Request write into date registers
+	SPI.transfer(DS323X_DATE_REGS + DS3234_WRITE);
 	for (i = 3; i <= 6; i++)      // For sanity, index is register we're writing
 	{
 		SPI.transfer(TimeDate[i]);
@@ -144,7 +144,7 @@ void DS3234RTC::writeTime( tmElements_t &tm )
 
 	SPI.beginTransaction(spi_settings);
 	digitalWrite(ss_pin, LOW);
-	SPI.transfer(0x80);           // Request write into time registers
+	SPI.transfer(DS323X_TIME_REGS + DS3234_WRITE);           // Request write into time registers
 	for (i = 0; i < 3; i++)
 	{
 		SPI.transfer(TimeDate[i]);
@@ -159,7 +159,7 @@ void DS3234RTC::readTemperature(tpElements_t &tmp)
 
 	SPI.beginTransaction(spi_settings);
 	digitalWrite(ss_pin, LOW);
-	SPI.transfer(0x11);
+	SPI.transfer(DS323X_TEMP_MSB);
 	msb = SPI.transfer(0x00);
 	lsb = SPI.transfer(0x00);
 	digitalWrite(ss_pin, HIGH);
@@ -180,7 +180,7 @@ void DS3234RTC::readAlarm(uint8_t alarm, alarmMode_t &mode, tmElements_t &tm)
 
 	SPI.beginTransaction(spi_settings);
 	digitalWrite(ss_pin, LOW);
-	SPI.transfer( (alarm==1) ? 0x07 : 0x08);
+	SPI.transfer( (alarm==1) ? DS323X_ALARM1_REGS : DS323X_ALARM2_REGS);
 	data[0] = 0;
 	if (alarm == 1) data[0] = SPI.transfer(0x00);
 	data[1] = SPI.transfer(0x00);
@@ -294,7 +294,7 @@ void DS3234RTC::writeAlarm(uint8_t alarm, alarmMode_t mode, tmElements_t tm) {
 
 	SPI.beginTransaction(spi_settings);
 	digitalWrite(ss_pin, LOW);
-	SPI.transfer( ((alarm == 1) ? 0x07 : 0x0B) );
+	SPI.transfer( ((alarm == 1) ? 0x07 : 0x0B) + 0x80 );
 	if (alarm == 1) SPI.transfer(data[0]);
 	SPI.transfer(data[1]);
 	SPI.transfer(data[2]);
@@ -306,18 +306,18 @@ void DS3234RTC::writeAlarm(uint8_t alarm, alarmMode_t mode, tmElements_t tm) {
 bool DS3234RTC::isAlarmInterrupt(uint8_t alarm)
 {
 	if ((alarm > 2) || (alarm < 1)) return false;
-	uint8_t value = readControlRegister() & 0x07;  // sends 0Eh - Control register
+	uint8_t value = readControlRegister() & (DS323X_A1IE | DS323X_A2IE | DS323X_INTCN);
 	if (alarm == 1) {
-		return ((value & 0x05) == 0x05);
+		return ((value & (DS323X_A1IE | DS323X_INTCN)) == (DS323X_A1IE | DS323X_INTCN));
 	} else {
-		return ((value & 0x06) == 0x06);
+		return ((value & (DS323X_A1IE | DS323X_INTCN)) == (DS323X_A2IE | DS323X_INTCN));
 	}
 }
 
 uint8_t DS3234RTC::isAlarmFlag()
 {
-	uint8_t value = readStatusRegister(); // Status register
-	return (value & (DS3234_A1F | DS3234_A2F));
+	uint8_t value = readStatusRegister();
+	return (value & (DS323X_A1F | DS323X_A2F));
 }
 
 bool DS3234RTC::isAlarmFlag(uint8_t alarm)
@@ -412,7 +412,7 @@ void DS3234RTC::writeStatusRegister(uint8_t value)
 
 bool DS3234RTC::isOscillatorStopFlag()
 {
-	return ((readStatusRegister() & DS3234_OSF) != 0);
+	return ((readStatusRegister() & DS323X_OSF) != 0);
 }
 
 void DS3234RTC::setOscillatorStopFlag(bool enable)
@@ -420,9 +420,9 @@ void DS3234RTC::setOscillatorStopFlag(bool enable)
 	uint8_t value = readStatusRegister();
 	if (enable)
 	{
-		value |= DS3234_OSF;
+		value |= DS323X_OSF;
 	} else {
-		value &= ~DS3234_OSF;
+		value &= ~DS323X_OSF;
 	}
 	writeStatusRegister(value);
 }
@@ -432,9 +432,9 @@ void DS3234RTC::setBB33kHzOutput(bool enable)
 	uint8_t value = readStatusRegister();
 	if (enable)
 	{
-		value |= DS3234_BB33KHZ;
+		value |= DS323X_BB33KHZ;
 	} else {
-		value &= ~DS3234_BB33KHZ;
+		value &= ~DS323X_BB33KHZ;
 	}
 }
 

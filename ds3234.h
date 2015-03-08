@@ -10,25 +10,7 @@
 #include <Time.h>
 #include <RTC.h>
 
-// control register bits
-#define DS3234_A1IE     0x01
-#define DS3234_A2IE     0x02
-#define DS3234_INTCN    0x04
-#define DS3234_RS1      0x08
-#define DS3234_RS2      0x10
-#define DS3234_CONV     0x20
-#define DS3234_BBSQ     0x40
-#define DS3234_EOSC     0x80
-
-// status register bits
-#define DS3234_A1F      0x01
-#define DS3234_A2F      0x02
-#define DS3234_BSY      0x04
-#define DS3234_EN33KHZ  0x08
-#define DS3234_CRATE0   0x10
-#define DS3234_CRATE1   0x20
-#define DS3234_BB33KHZ  0x40
-#define DS3234_OSF      0x80
+#define DS3234_WRITE 0x80
 
 // helpers
 uint8_t dectobcd(const uint8_t val);
