@@ -1,37 +1,3 @@
-
-/*
-  DS3234 library for the Arduino.
-
-  This library implements the following features:
-
-   - read/write of current time, both of the alarms, 
-   control/status registers, aging register, sram
-   - read of the temperature register, and of any address from the chip.
-
-  Author:          Petre Rodan <petre.rodan@simplex.ro>
-  Available from:  https://github.com/rodan/ds3234
- 
-  The DS3231 is a low-cost, extremely accurate I2C real-time clock 
-  (RTC) with an integrated temperature-compensated crystal oscillator 
-  (TCXO) and crystal.
-
-  GNU GPLv3 license:
-  
-  This program is free software: you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 3 of the License, or
-  (at your option) any later version.
-   
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-   
-  You should have received a copy of the GNU General Public License
-  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-   
-*/
-
 #include <SPI.h>
 #include <ds3234.h>
 
@@ -393,9 +359,9 @@ void DS3234RTC::setBBOscillator(bool enable)
 	uint8_t value = readControlRegister();
 	if (enable)
 	{
-		value |= DS3232_EOSC;
+		value |= DS323X_EOSC;
 	} else {
-		value &= ~DS3232_EOSC;
+		value &= ~DS323X_EOSC;
 	}
 	writeControlRegister(value);
 }
@@ -405,9 +371,9 @@ void DS3234RTC::setBBSqareWave(bool enable)
 	uint8_t value = readControlRegister();
 	if (enable)
 	{
-		value |= DS3232_BBSQW;
+		value |= DS323X_BBSQW;
 	} else {
-		value &= ~DS3232_BBSQW;
+		value &= ~DS323X_BBSQW;
 	}
 	writeControlRegister(value);
 }
@@ -417,14 +383,14 @@ void DS3234RTC::setSQIMode(sqiMode_t mode)
 	uint8_t value = readControlRegister();
 	switch (mode)
 	{
-		case sqiModeNone: value |= DS3232_INTCN; break;
-		case sqiMode1Hz: value |= DS3232_RS_1HZ;  break;
-		case sqiMode1024Hz: value |= DS3232_RS_1024HZ; break;
-		case sqiMode4096Hz: value |= DS3232_RS_4096HZ; break;
-		case sqiMode8192Hz: value |= DS3232_RS_8192HZ; break;
-		case sqiModeAlarm1: value |= (DS3232_INTCN | DS3232_A1IE); break;
-		case sqiModeAlarm2: value |= (DS3232_INTCN | DS3232_A2IE); break;
-		case sqiModeAlarmBoth: value |= (DS3232_INTCN | DS3232_A1IE | DS3232_A2IE); break;
+		case sqiModeNone: value |= DS323X_INTCN; break;
+		case sqiMode1Hz: value |= DS323X_RS_1HZ;  break;
+		case sqiMode1024Hz: value |= DS323X_RS_1024HZ; break;
+		case sqiMode4096Hz: value |= DS323X_RS_4096HZ; break;
+		case sqiMode8192Hz: value |= DS323X_RS_8192HZ; break;
+		case sqiModeAlarm1: value |= (DS323X_INTCN | DS323X_A1IE); break;
+		case sqiModeAlarm2: value |= (DS323X_INTCN | DS323X_A2IE); break;
+		case sqiModeAlarmBoth: value |= (DS323X_INTCN | DS323X_A1IE | DS323X_A2IE); break;
 	}
 	writeControlRegister(value);
 }
@@ -477,10 +443,10 @@ void DS3234RTC::setTCXORate(tempScanRate_t rate)
 	uint8_t value = readStatusRegister() & 0xCF; // clear the rate bits
 	switch (rate)
 	{
-		case tempScanRate64sec: value |= DS3232_CRATE_64; break;
-		case tempScanRate128sec: value |= DS3232_CRATE_128; break;
-		case tempScanRate256sec: value |= DS3232_CRATE_256; break;
-		case tempScanRate512sec: value |= DS3232_CRATE_512; break;
+		case tempScanRate64sec: value |= DS323X_CRATE_64; break;
+		case tempScanRate128sec: value |= DS323X_CRATE_128; break;
+		case tempScanRate256sec: value |= DS323X_CRATE_256; break;
+		case tempScanRate512sec: value |= DS323X_CRATE_512; break;
 	}
 	writeStatusRegister(value);
 }
@@ -490,14 +456,14 @@ void DS3234RTC::set33kHzOutput(bool enable)
 	uint8_t value = readStatusRegister();
 	if (enable)
 	{
-		value |= DS3232_EN33KHZ;
+		value |= DS323X_EN33KHZ;
 	} else {
-		value &= ~DS3232_EN33KHZ;
+		value &= ~DS323X_EN33KHZ;
 	}
 	writeStatusRegister(value);
 }
 
 bool DS3234RTC::isTCXOBusy()
 {
-	return((readStatusRegister() & DS3232_BSY) != 0);
+	return((readStatusRegister() & DS323X_BSY) != 0);
 }

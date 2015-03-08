@@ -34,9 +34,6 @@
 uint8_t dectobcd(const uint8_t val);
 uint8_t bcdtodec(const uint8_t val);
 
-/**
- * DS3232RTC Class
- */
 class DS3234RTC
 {
   public:
