@@ -198,7 +198,7 @@ void DS3234RTC::readAlarm(uint8_t alarm, alarmMode_t &mode, tmElements_t &tm)
 	switch (flags) {
 		case 0x04: mode = alarmModePerSecond; break;  // X1111
 		case 0x0E: mode = (alarm == 1) ? alarmModeSecondsMatch : alarmModePerMinute; break;  // X1110
-		case 0x0A: mode = alarmModeMinutesMatch; break;  // X1100
+		case 0x0C: mode = alarmModeMinutesMatch; break;  // X1100
 		case 0x08: mode = alarmModeHoursMatch; break;  // X1000
 		case 0x00: mode = alarmModeDateMatch; break;  // 00000
 		case 0x10: mode = alarmModeDayMatch; break;  // 10000
