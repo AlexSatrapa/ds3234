@@ -63,22 +63,42 @@ void DS3234RTC::write1(uint8_t addr, uint8_t value)
 	SPI.endTransaction();
 }
 
+void DS3234RTC::readN(uint8_t addr, uint8_t buf[], uint8_t len)
+{
+	uint8_t i;
+
+	SPI.beginTransaction(spi_settings);
+	digitalWrite(ss_pin, LOW);
+	SPI.transfer(addr);
+	for (i=0; i<len; i++)
+	{
+		buf[i] = SPI.transfer(0x00);
+	}
+	digitalWrite(ss_pin, HIGH);
+	SPI.endTransaction();
+}
+
+void DS3234RTC::writeN(uint8_t addr, uint8_t buf[], uint8_t len)
+{
+	uint8_t i;
+
+	SPI.beginTransaction(spi_settings);
+	digitalWrite(ss_pin, LOW);
+	SPI.transfer(addr + 0x80);
+	for (i=0; i<len; i++)
+	{
+		SPI.transfer(buf[i]);
+	}
+	digitalWrite(ss_pin, HIGH);
+	SPI.endTransaction();
+}
+
 void DS3234RTC::read( tmElements_t &tm )
 {
 	uint8_t TimeDate[7];      //second,minute,hour,dow,day,month,year
 	uint8_t century = 0;
-	uint8_t i;
 
-	SPI.beginTransaction(spi_settings);
-	delay(1);
-	digitalWrite(ss_pin, LOW);
-	SPI.transfer(DS323X_TIME_REGS);
-	for (i = 0; i <= 6; i++)
-	{
-	  TimeDate[i] = SPI.transfer(0x00);
-	}
-	digitalWrite(ss_pin, HIGH);
-	SPI.endTransaction();
+	readN(DS323X_TIME_REGS, TimeDate, 7);
 
 	tm.Second = bcdtodec(TimeDate[0] & 0x7F);
 	tm.Minute = bcdtodec(TimeDate[1] & 0x7F);
@@ -101,7 +121,7 @@ void DS3234RTC::read( tmElements_t &tm )
 
 void DS3234RTC::writeDate( tmElements_t &tm )
 {
-	uint8_t i, y;
+	uint8_t y;
 	uint8_t TimeDate[7];
 
 	if( tm.Wday == 0 || tm.Wday > 7)
@@ -121,73 +141,52 @@ void DS3234RTC::writeDate( tmElements_t &tm )
 	}
 	TimeDate[6] = dectobcd(y);
 
-	// Write date to RTC
-	SPI.beginTransaction(spi_settings);
-	digitalWrite(ss_pin, LOW);
-	SPI.transfer(DS323X_DATE_REGS + DS3234_WRITE);
-	for (i = 3; i <= 6; i++)      // For sanity, index is register we're writing
-	{
-		SPI.transfer(TimeDate[i]);
-	}
-	digitalWrite(ss_pin, HIGH);
-	SPI.endTransaction();
+	writeN(DS323X_DATE_REGS, TimeDate + 3 * sizeof(uint8_t), 3);
 }
 
 void DS3234RTC::writeTime( tmElements_t &tm )
 {
-	uint8_t i;
 	uint8_t TimeDate[7];
 
 	TimeDate[0] = dectobcd(tm.Second);
 	TimeDate[1] = dectobcd(tm.Minute);
 	TimeDate[2] = dectobcd(tm.Hour);
 
-	SPI.beginTransaction(spi_settings);
-	digitalWrite(ss_pin, LOW);
-	SPI.transfer(DS323X_TIME_REGS + DS3234_WRITE);           // Request write into time registers
-	for (i = 0; i < 3; i++)
-	{
-		SPI.transfer(TimeDate[i]);
-	}
-	digitalWrite(ss_pin, HIGH);
-	SPI.endTransaction();
+	writeN(DS323X_TIME_REGS, TimeDate, 3);
 }
 
 void DS3234RTC::readTemperature(tpElements_t &tmp)
 {
-	uint8_t msb, lsb;
+	uint8_t data[2];
 
-	SPI.beginTransaction(spi_settings);
-	digitalWrite(ss_pin, LOW);
-	SPI.transfer(DS323X_TEMP_MSB);
-	msb = SPI.transfer(0x00);
-	lsb = SPI.transfer(0x00);
-	digitalWrite(ss_pin, HIGH);
-	SPI.endTransaction();
+	readN(DS323X_TEMP_MSB, data, 2);
 
-	tmp.Temp = msb;
-	tmp.Decimal = (lsb >> 6) * 25;
+	tmp.Temp = data[0];
+	tmp.Decimal = (data[1] >> 6) * 25;
 }
 
 void DS3234RTC::readAlarm(uint8_t alarm, alarmMode_t &mode, tmElements_t &tm)
 {
 	uint8_t data[4];
 	uint8_t flags;
+	uint8_t addr, offset, length;
 
 	memset(&tm, 0, sizeof(tmElements_t));
 	mode = alarmModeUnknown;
 	if ((alarm < 1) || (alarm > 2)) return;
+	if (alarm == 1)
+	{
+		addr = DS323X_ALARM1_REGS;
+		offset = 0;
+		length = 4;
+	} else {
+		addr = DS323X_ALARM2_REGS;
+		offset = 1;
+		length = 3;
+	}
 
-	SPI.beginTransaction(spi_settings);
-	digitalWrite(ss_pin, LOW);
-	SPI.transfer( (alarm==1) ? DS323X_ALARM1_REGS : DS323X_ALARM2_REGS);
 	data[0] = 0;
-	if (alarm == 1) data[0] = SPI.transfer(0x00);
-	data[1] = SPI.transfer(0x00);
-	data[2] = SPI.transfer(0x00);
-	data[3] = SPI.transfer(0x00);
-	digitalWrite(ss_pin, HIGH);
-	SPI.endTransaction();
+	readN(addr, data + offset * sizeof(uint8_t), length);
 
 	flags =
 		((data[0] & 0x80) >> 7) |
@@ -239,6 +238,7 @@ void DS3234RTC::readAlarm(uint8_t alarm, alarmMode_t &mode, tmElements_t &tm)
 
 void DS3234RTC::writeAlarm(uint8_t alarm, alarmMode_t mode, tmElements_t tm) {
 	uint8_t data[4];
+	uint8_t addr, offset, length;
 
 	switch (mode) {
 		case alarmModePerSecond:
@@ -292,15 +292,18 @@ void DS3234RTC::writeAlarm(uint8_t alarm, alarmMode_t mode, tmElements_t tm) {
 		default: return;
 	}
 
-	SPI.beginTransaction(spi_settings);
-	digitalWrite(ss_pin, LOW);
-	SPI.transfer( ((alarm == 1) ? 0x07 : 0x0B) + 0x80 );
-	if (alarm == 1) SPI.transfer(data[0]);
-	SPI.transfer(data[1]);
-	SPI.transfer(data[2]);
-	SPI.transfer(data[3]);
-	digitalWrite(ss_pin, HIGH);
-	SPI.endTransaction();
+	if (alarm == 1)
+	{
+		addr = DS323X_ALARM1_REGS;
+		offset = 0;
+		length = 4;
+	} else {
+		addr = DS323X_ALARM2_REGS;
+		offset = 1;
+		length = 3;
+	}
+
+	writeN( addr, data + offset * sizeof(uint8_t), length);
 }
 
 bool DS3234RTC::isAlarmInterrupt(uint8_t alarm)
@@ -346,12 +349,12 @@ void DS3234RTC::clearAlarmFlag(uint8_t alarm)
 
 uint8_t DS3234RTC::readControlRegister()
 {
-	return read1(0x0E);
+	return read1(DS323X_CONTROL_REG);
 }
 
 void DS3234RTC::writeControlRegister(uint8_t value)
 {
-	write1(0x0E, value);
+	write1(DS323X_CONTROL_REG, value);
 }
 
 void DS3234RTC::setBBOscillator(bool enable)
@@ -402,12 +405,12 @@ void DS3234RTC::setSQIMode(sqiMode_t mode)
  */
 uint8_t DS3234RTC::readStatusRegister()
 {
-	return read1(0x0F);
+	return read1(DS323X_STATUS_REG);
 }
 
 void DS3234RTC::writeStatusRegister(uint8_t value)
 {
-	write1(0x0F, value);
+	write1(DS323X_STATUS_REG, value);
 }
 
 bool DS3234RTC::isOscillatorStopFlag()
@@ -440,7 +443,7 @@ void DS3234RTC::setBB33kHzOutput(bool enable)
 
 void DS3234RTC::setTCXORate(tempScanRate_t rate)
 {
-	uint8_t value = readStatusRegister() & 0xCF; // clear the rate bits
+	uint8_t value = readStatusRegister() & (DS323X_CRATE1|DS323X_CRATE0); // clear the rate bits
 	switch (rate)
 	{
 		case tempScanRate64sec: value |= DS323X_CRATE_64; break;
