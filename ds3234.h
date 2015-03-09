@@ -61,6 +61,8 @@ class DS3234RTC
   protected:
     uint8_t read1(uint8_t addr);
     void write1(uint8_t addr, uint8_t data);
+    void readN(uint8_t addr, uint8_t buf[], uint8_t len);
+    void writeN(uint8_t addr, uint8_t buf[], uint8_t len);
 };
 
 
