@@ -8,7 +8,7 @@
 #endif
 
 #include <Time.h>
-#include <RTC.h>
+#include <DSRTC.h>
 
 #define DS3234_WRITE 0x80
 
