@@ -1,14 +1,13 @@
-#include <SPI.h>
 #include <ds3234.h>
 
 // helpers
 
-uint8_t dectobcd(const uint8_t val)
+uint8_t DS3234RTC::dec2bcd(const uint8_t val)
 {
     return ((val / 10 * 16) + (val % 10));
 }
 
-uint8_t bcdtodec(const uint8_t val)
+uint8_t DS3234RTC::bcd2dec(const uint8_t val)
 {
     return ((val / 16 * 10) + (val % 16));
 }
@@ -100,29 +99,35 @@ void DS3234RTC::read( tmElements_t &tm )
 
 	readN(DS323X_TIME_REGS, TimeDate, 7);
 
-	tm.Second = bcdtodec(TimeDate[0] & 0x7F);
-	tm.Minute = bcdtodec(TimeDate[1] & 0x7F);
+	tm.Second = bcd2dec(TimeDate[0] & 0x7F);
+	tm.Minute = bcd2dec(TimeDate[1] & 0x7F);
 	if ((TimeDate[2] & 0x40) != 0)
 	{
 		// Convert 12-hour format to 24-hour format
-		tm.Hour = bcdtodec(TimeDate[2] & 0x1F);
+		tm.Hour = bcd2dec(TimeDate[2] & 0x1F);
 		if((TimeDate[2] & 0x20) != 0) tm.Hour += 12;
 	} else {
-		tm.Hour = bcdtodec(TimeDate[2] & 0x3F);
+		tm.Hour = bcd2dec(TimeDate[2] & 0x3F);
 	}
-	tm.Wday = bcdtodec(TimeDate[3] & 0x07);
-	tm.Day = bcdtodec(TimeDate[4] & 0x3F);
-	tm.Month = bcdtodec(TimeDate[5] & 0x1F);
-	tm.Year = bcdtodec(TimeDate[6]);
+	tm.Wday = bcd2dec(TimeDate[3] & 0x07);
+	tm.Day = bcd2dec(TimeDate[4] & 0x3F);
+	tm.Month = bcd2dec(TimeDate[5] & 0x1F);
+	tm.Year = bcd2dec(TimeDate[6]);
 	century = (TimeDate[5] & 0x80);
 	if (century != 0) tm.Year += 100;
 	tm.Year = y2kYearToTm(tm.Year);
 }
 
-void DS3234RTC::writeDate( tmElements_t &tm )
+inline void DS3234RTC::populateTimeElements( tmElements_t &tm, uint8_t TimeDate[] )
+{
+	TimeDate[0] = dec2bcd(tm.Second);
+	TimeDate[1] = dec2bcd(tm.Minute);
+	TimeDate[2] = dec2bcd(tm.Hour);
+}
+
+inline void DS3234RTC::populateDateElements( tmElements_t &tm, uint8_t TimeDate[] )
 {
 	uint8_t y;
-	uint8_t TimeDate[7];
 
 	if( tm.Wday == 0 || tm.Wday > 7)
 	{
@@ -131,28 +136,42 @@ void DS3234RTC::writeDate( tmElements_t &tm )
 		tm.Wday = tm2.Wday;
 	}
 	TimeDate[3] = tm.Wday;
-	TimeDate[4] = dectobcd(tm.Day);
-	TimeDate[5] = dectobcd(tm.Month);
+	TimeDate[4] = dec2bcd(tm.Day);
+	TimeDate[5] = dec2bcd(tm.Month);
 	y = tmYearToY2k(tm.Year);
 	if (y > 99)
 	{
 		TimeDate[5] |= 0x80; // century flag
 		y -= 100;
 	}
-	TimeDate[6] = dectobcd(y);
+	TimeDate[6] = dec2bcd(y);
+} 
 
-	writeN(DS323X_DATE_REGS, TimeDate + 3 * sizeof(uint8_t), 3);
+void DS3234RTC::writeDate( tmElements_t &tm )
+{
+	uint8_t TimeDate[7];
+
+	populateDateElements(tm, TimeDate);
+
+	writeN(DS323X_DATE_REGS, TimeDate + 3 * sizeof(uint8_t), 4);
 }
 
 void DS3234RTC::writeTime( tmElements_t &tm )
 {
 	uint8_t TimeDate[7];
-
-	TimeDate[0] = dectobcd(tm.Second);
-	TimeDate[1] = dectobcd(tm.Minute);
-	TimeDate[2] = dectobcd(tm.Hour);
+	populateTimeElements( tm, TimeDate );
 
 	writeN(DS323X_TIME_REGS, TimeDate, 3);
+}
+
+void DS3234RTC::write( tmElements_t &tm )
+{
+	uint8_t TimeDate[7];
+
+	populateTimeElements(tm, TimeDate);
+	populateDateElements(tm, TimeDate);
+
+	writeN(DS323X_TIME_REGS, TimeDate, 7);
 }
 
 void DS3234RTC::readTemperature(tpElements_t &tmp)
@@ -203,22 +222,22 @@ void DS3234RTC::readAlarm(uint8_t alarm, alarmMode_t &mode, tmElements_t &tm)
 		case 0x10: mode = alarmModeDayMatch; break;  // 10000
 	}
 
-	if (alarm == 1) tm.Second = bcdtodec(data[0] & 0x7F);
-	tm.Minute = bcdtodec(data[1] & 0x7F);
+	if (alarm == 1) tm.Second = bcd2dec(data[0] & 0x7F);
+	tm.Minute = bcd2dec(data[1] & 0x7F);
 	if ((data[2] & 0x40) != 0) {
 		// 12 hour format with bit 5 set as PM
-		tm.Hour = bcdtodec(data[2] & 0x1F);
+		tm.Hour = bcd2dec(data[2] & 0x1F);
 		if ((data[2] & 0x20) != 0) tm.Hour += 12;
 	} else {
 		// 24 hour format
-		tm.Hour = bcdtodec(data[2] & 0x3F);
+		tm.Hour = bcd2dec(data[2] & 0x3F);
 	}
 	if ((data[3] & 0x40) == 0) {
 		// Alarm holds Date (of Month)
-		tm.Day = bcdtodec(data[3] & 0x3F);
+		tm.Day = bcd2dec(data[3] & 0x3F);
 	} else {
 		// Alarm holds Day (of Week)
-		tm.Wday = bcdtodec(data[3] & 0x07);
+		tm.Wday = bcd2dec(data[3] & 0x07);
 	}
 
 	// TODO : Not too sure about this.
@@ -254,34 +273,34 @@ void DS3234RTC::writeAlarm(uint8_t alarm, alarmMode_t mode, tmElements_t tm) {
 			data[3] = 0x80;
 			break;
 		case alarmModeSecondsMatch:
-			data[0] = 0x00 | dectobcd(tm.Second);
+			data[0] = 0x00 | dec2bcd(tm.Second);
 			data[1] = 0x80;
 			data[2] = 0x80;
 			data[3] = 0x80;
 			break;
 		case alarmModeMinutesMatch:
-			data[0] = 0x00 | dectobcd(tm.Second);
-			data[1] = 0x00 | dectobcd(tm.Minute);
+			data[0] = 0x00 | dec2bcd(tm.Second);
+			data[1] = 0x00 | dec2bcd(tm.Minute);
 			data[2] = 0x80;
 			data[3] = 0x80;
 			break;
 		case alarmModeHoursMatch:
-			data[0] = 0x00 | dectobcd(tm.Second);
-			data[1] = 0x00 | dectobcd(tm.Minute);
-			data[2] = 0x00 | dectobcd(tm.Hour);
+			data[0] = 0x00 | dec2bcd(tm.Second);
+			data[1] = 0x00 | dec2bcd(tm.Minute);
+			data[2] = 0x00 | dec2bcd(tm.Hour);
 			data[3] = 0x80;
 			break;
 		case alarmModeDateMatch:
-			data[0] = 0x00 | dectobcd(tm.Second);
-			data[1] = 0x00 | dectobcd(tm.Minute);
-			data[2] = 0x00 | dectobcd(tm.Hour);
-			data[3] = 0x00 | dectobcd(tm.Day);
+			data[0] = 0x00 | dec2bcd(tm.Second);
+			data[1] = 0x00 | dec2bcd(tm.Minute);
+			data[2] = 0x00 | dec2bcd(tm.Hour);
+			data[3] = 0x00 | dec2bcd(tm.Day);
 			break;
 		case alarmModeDayMatch:
-			data[0] = 0x00 | dectobcd(tm.Second);
-			data[1] = 0x00 | dectobcd(tm.Minute);
-			data[2] = 0x00 | dectobcd(tm.Hour);
-			data[3] = 0x40 | dectobcd(tm.Wday);
+			data[0] = 0x00 | dec2bcd(tm.Second);
+			data[1] = 0x00 | dec2bcd(tm.Minute);
+			data[2] = 0x00 | dec2bcd(tm.Hour);
+			data[3] = 0x40 | dec2bcd(tm.Wday);
 			break;
 		case alarmModeOff:
 			data[0] = 0x00;

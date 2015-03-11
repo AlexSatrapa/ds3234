@@ -8,7 +8,8 @@
 #endif
 
 #include <Time.h>
-#include <RTC.h>
+#include <DSRTC.h>
+#include <SPI.h>
 
 #define DS3234_WRITE 0x80
 
@@ -55,14 +56,16 @@ class DS3234RTC
     void readTemperature(tpElements_t &tmp);
     SPISettings spi_settings;
   private:
-    uint8_t dec2bcd(uint8_t num);
-    uint8_t bcd2dec(uint8_t num);
+    uint8_t dec2bcd(uint8_t dec);
+    uint8_t bcd2dec(uint8_t bcd);
     uint8_t ss_pin;
   protected:
     uint8_t read1(uint8_t addr);
     void write1(uint8_t addr, uint8_t data);
     void readN(uint8_t addr, uint8_t buf[], uint8_t len);
     void writeN(uint8_t addr, uint8_t buf[], uint8_t len);
+    void populateTimeElements( tmElements_t &tm, uint8_t TimeDate[] );
+    void populateDateElements( tmElements_t &tm, uint8_t TimeDate[] );
 };
 
 
