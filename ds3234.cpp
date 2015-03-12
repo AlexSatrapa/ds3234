@@ -462,7 +462,7 @@ void DS3234RTC::setBB33kHzOutput(bool enable)
 
 void DS3234RTC::setTCXORate(tempScanRate_t rate)
 {
-	uint8_t value = readStatusRegister() & (DS323X_CRATE1|DS323X_CRATE0); // clear the rate bits
+	uint8_t value = readStatusRegister() & ~(DS323X_CRATE1|DS323X_CRATE0); // clear the rate bits
 	switch (rate)
 	{
 		case tempScanRate64sec: value |= DS323X_CRATE_64; break;
