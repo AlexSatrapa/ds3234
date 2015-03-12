@@ -402,7 +402,7 @@ void DS3234RTC::setBBSqareWave(bool enable)
 
 void DS3234RTC::setSQIMode(sqiMode_t mode)
 {
-	uint8_t value = readControlRegister();
+	uint8_t value = readControlRegister() & 0xE0;
 	switch (mode)
 	{
 		case sqiModeNone: value |= DS323X_INTCN; break;
