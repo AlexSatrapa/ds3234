@@ -332,7 +332,7 @@ bool DS3234RTC::isAlarmInterrupt(uint8_t alarm)
 	if (alarm == 1) {
 		return ((value & (DS323X_A1IE | DS323X_INTCN)) == (DS323X_A1IE | DS323X_INTCN));
 	} else {
-		return ((value & (DS323X_A1IE | DS323X_INTCN)) == (DS323X_A2IE | DS323X_INTCN));
+		return ((value & (DS323X_A2IE | DS323X_INTCN)) == (DS323X_A2IE | DS323X_INTCN));
 	}
 }
 
