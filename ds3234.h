@@ -17,11 +17,11 @@
 uint8_t dectobcd(const uint8_t val);
 uint8_t bcdtodec(const uint8_t val);
 
-class DS3234RTC: public DSRTC
+class DS3234: public DSRTC
 {
   public:
-    DS3234RTC( uint8_t pin );
-    DS3234RTC( uint8_t pin, const uint8_t ctrl_reg );
+    DS3234( uint8_t pin );
+    DS3234( uint8_t pin, const uint8_t ctrl_reg );
     SPISettings spi_settings;
   private:
     uint8_t ss_pin;

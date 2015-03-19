@@ -1,20 +1,20 @@
 #include <ds3234.h>
 
-DS3234RTC::DS3234RTC( uint8_t pin )
+DS3234::DS3234( uint8_t pin )
 {
 	ss_pin = pin;
 	pinMode(ss_pin, OUTPUT);
 	spi_settings = SPISettings(4000000, MSBFIRST, SPI_MODE1);
 }
 
-DS3234RTC::DS3234RTC( uint8_t pin, const uint8_t ctrl_reg )
+DS3234::DS3234( uint8_t pin, const uint8_t ctrl_reg )
 {
 	ss_pin = pin;
 	pinMode(ss_pin, OUTPUT);
 	spi_settings = SPISettings(4000000, MSBFIRST, SPI_MODE1);
 }
 
-uint8_t DS3234RTC::read1(uint8_t addr)
+uint8_t DS3234::read1(uint8_t addr)
 {
 	uint8_t data;
 
@@ -27,7 +27,7 @@ uint8_t DS3234RTC::read1(uint8_t addr)
 	return data;
 }
 
-void DS3234RTC::write1(uint8_t addr, uint8_t value)
+void DS3234::write1(uint8_t addr, uint8_t value)
 {
 	SPI.beginTransaction(spi_settings);
 	digitalWrite(ss_pin, LOW);
@@ -37,7 +37,7 @@ void DS3234RTC::write1(uint8_t addr, uint8_t value)
 	SPI.endTransaction();
 }
 
-void DS3234RTC::readN(uint8_t addr, uint8_t buf[], uint8_t len)
+void DS3234::readN(uint8_t addr, uint8_t buf[], uint8_t len)
 {
 	uint8_t i;
 
@@ -52,7 +52,7 @@ void DS3234RTC::readN(uint8_t addr, uint8_t buf[], uint8_t len)
 	SPI.endTransaction();
 }
 
-void DS3234RTC::writeN(uint8_t addr, uint8_t buf[], uint8_t len)
+void DS3234::writeN(uint8_t addr, uint8_t buf[], uint8_t len)
 {
 	uint8_t i;
 
