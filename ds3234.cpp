@@ -4,6 +4,7 @@ DS3234::DS3234( uint8_t pin )
 {
 	ss_pin = pin;
 	pinMode(ss_pin, OUTPUT);
+	SPI.begin();
 	spi_settings = SPISettings(4000000, MSBFIRST, SPI_MODE1);
 }
 
