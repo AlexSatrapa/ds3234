@@ -1,6 +1,6 @@
 #include <ds3234.h>
 
-DS3234::DS3234( uint8_t pin )
+DS3234::DS3234( byte pin )
 {
 	ss_pin = pin;
 	pinMode(ss_pin, OUTPUT);
@@ -8,16 +8,16 @@ DS3234::DS3234( uint8_t pin )
 	spi_settings = SPISettings(4000000, MSBFIRST, SPI_MODE1);
 }
 
-DS3234::DS3234( uint8_t pin, const uint8_t ctrl_reg )
+DS3234::DS3234( byte pin, const byte ctrl_reg )
 {
 	ss_pin = pin;
 	pinMode(ss_pin, OUTPUT);
 	spi_settings = SPISettings(4000000, MSBFIRST, SPI_MODE1);
 }
 
-uint8_t DS3234::read1(uint8_t addr)
+byte DS3234::read1(byte addr)
 {
-	uint8_t data;
+	byte data;
 
 	SPI.beginTransaction(spi_settings);
 	digitalWrite(ss_pin, LOW);
@@ -28,7 +28,7 @@ uint8_t DS3234::read1(uint8_t addr)
 	return data;
 }
 
-void DS3234::write1(uint8_t addr, uint8_t value)
+void DS3234::write1(byte addr, byte value)
 {
 	SPI.beginTransaction(spi_settings);
 	digitalWrite(ss_pin, LOW);
@@ -38,9 +38,9 @@ void DS3234::write1(uint8_t addr, uint8_t value)
 	SPI.endTransaction();
 }
 
-void DS3234::readN(uint8_t addr, uint8_t buf[], uint8_t len)
+void DS3234::readN(byte addr, byte buf[], byte len)
 {
-	uint8_t i;
+	byte i;
 
 	SPI.beginTransaction(spi_settings);
 	digitalWrite(ss_pin, LOW);
@@ -53,9 +53,9 @@ void DS3234::readN(uint8_t addr, uint8_t buf[], uint8_t len)
 	SPI.endTransaction();
 }
 
-void DS3234::writeN(uint8_t addr, uint8_t buf[], uint8_t len)
+void DS3234::writeN(byte addr, byte buf[], byte len)
 {
-	uint8_t i;
+	byte i;
 
 	SPI.beginTransaction(spi_settings);
 	digitalWrite(ss_pin, LOW);

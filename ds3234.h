@@ -13,22 +13,22 @@
 #define DS3234_WRITE 0x80
 
 // helpers
-uint8_t dectobcd(const uint8_t val);
-uint8_t bcdtodec(const uint8_t val);
+byte dectobcd(const byte val);
+byte bcdtodec(const byte val);
 
 class DS3234: public DSRTC
 {
   public:
-    DS3234( uint8_t pin );
-    DS3234( uint8_t pin, const uint8_t ctrl_reg );
+    DS3234( byte pin );
+    DS3234( byte pin, const byte ctrl_reg );
     SPISettings spi_settings;
   private:
-    uint8_t ss_pin;
+    byte ss_pin;
   protected:
-    uint8_t read1(uint8_t addr);
-    void write1(uint8_t addr, uint8_t data);
-    void readN(uint8_t addr, uint8_t buf[], uint8_t len);
-    void writeN(uint8_t addr, uint8_t buf[], uint8_t len);
+    byte read1(byte addr);
+    void write1(byte addr, byte data);
+    void readN(byte addr, byte buf[], byte len);
+    void writeN(byte addr, byte buf[], byte len);
 };
 
 #endif
