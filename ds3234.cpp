@@ -12,6 +12,7 @@ DS3234::DS3234( byte pin, const byte ctrl_reg )
 {
 	ss_pin = pin;
 	pinMode(ss_pin, OUTPUT);
+	SPI.begin();
 	spi_settings = SPISettings(4000000, MSBFIRST, SPI_MODE1);
 }
 
