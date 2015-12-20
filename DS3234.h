@@ -12,10 +12,6 @@
 
 #define DS3234_WRITE 0x80
 
-// helpers
-byte dectobcd(const byte val);
-byte bcdtodec(const byte val);
-
 class DS3234: public DSRTC
 {
   public:
