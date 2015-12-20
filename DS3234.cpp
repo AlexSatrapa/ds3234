@@ -1,4 +1,4 @@
-#include <ds3234.h>
+#include <DS3234.h>
 
 DS3234::DS3234( byte pin )
 {
